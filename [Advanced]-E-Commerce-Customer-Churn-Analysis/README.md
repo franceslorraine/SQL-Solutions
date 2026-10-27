@@ -49,8 +49,8 @@ Key preparation steps included:
 - **Data Integrity**: Checked customer identifiers for duplicate records.
 - **Missing Values**: Identified null values in numerical columns and evaluated imputation approaches.
 - **Category Standardization**: Resolved inconsistent labels in preferred login devices, payment methods, and order categories.
-- **Value Validation**: Investigated suspicious warehouse-to-home distance values.
-- **Data Transformation**: Used conditional logic to create readable customer status labels from binary churn and complaint indicators.
+- **Value Validation**: Inspected extreme values in the `warehouse_to_home` distance metric, choosing to retain them as valid operational edge cases.
+- **Data Transformation**: Used conditional logic (`CASE` statements) to create readable customer status and complaint indicators.
 
 These steps established a consistent foundation for the subsequent exploratory analysis.
 
