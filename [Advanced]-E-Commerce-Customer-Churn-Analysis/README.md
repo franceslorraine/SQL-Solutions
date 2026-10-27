@@ -41,7 +41,7 @@ The dataset contains customer-level information covering demographics, platform 
 **Dataset Size:** 5,630 customer records, as reported in the reference analysis.
 
 <a id="data-cleaning"></a>
-## 🧹 Data Cleaning & Preparation
+## 🧹 [Data Cleaning & Preparation]([Advanced]-E-Commerce-Customer-Churn-Analysis/Data-Cleaning-queries.md)
 
 Before conducting the analysis, SQL was used to assess data quality and prepare the dataset for reliable querying.
 
