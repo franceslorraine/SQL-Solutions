@@ -59,10 +59,11 @@ These steps established a consistent foundation for the subsequent exploratory a
 The analysis explores customer churn through four areas:
 | No. | Analysis Category | Key Questions |
 | :--- | :--- | :--- |
-| **1** | **Overall Churn Performance** | • What is the overall customer churn rate?<br>• How many customers stayed versus churned? |
-| **2** | **Customer Demographics & Location** | • How does churn vary across city tiers?<br>• Are there differences in churn rates by gender?<br>• Does marital status show a relationship with churn? |
-| **3** | **Customer Engagement & Experience** | • How does tenure relate to churn?<br>• Does app usage time differ between churned and retained customers?<br>• Does the number of registered devices relate to churn?<br>• Are customer complaints associated with higher churn?<br>• How do satisfaction scores and days since the last order vary across customer groups? |
-| **4** | **Purchasing Behavior & Incentives** | • How does churn vary by preferred login device and payment mode?<br>• Which preferred order categories have higher churn rates?<br>• Does warehouse-to-home distance relate to churn?<br>• How do coupon usage and cashback amounts differ across customer groups? |
+| **1** | **Overall Churn Performance** | • What is the overall customer churn rate?<br>• How many customers stayed versus churned?<br>• How do baseline metrics (tenure, order counts, coupons, cashback, satisfaction) compare between churned and retained customers? |
+| **2** | **Customer Demographics & Location** | • Are churn rates different across city tiers (Tier 1, 2, 3)?<br>• Do churn rates differ by gender?<br>• Does marital status show a relationship with churn? |
+| **3** | **Customer Engagement & Experience** | • How does tenure relate to churn?<br>• Does app usage time differ between churned and retained customers?<br>• Does the number of registered devices relate to churn?<br>• Are customer complaints associated with higher churn?<br>• Is a longer interval (recency) since the last order associated with a higher churn rate? |
+| **4** | **Purchasing Behavior & Incentives** | • Which preferred login devices and payment modes have the highest observed churn rates?<br>• Which preferred order categories have higher churn rates?<br>• Does warehouse-to-home distance relate to churn?<br>• How do coupon usage and cashback amounts differ across customer groups?<br>• Does churn vary across cashback amount ranges?<br>• Does the reported increase in order amount from last year differ between segments? |
+| **5** | **Advanced Segmentation & Summary** | • Which multi-dimensional intersections of customer tenure, complaint status, and city tier identify the highest-risk customer segments? |
 
 <a id="exploratory-data-analysis"></a>
 ## 🧐 Exploratory Data Analysis
