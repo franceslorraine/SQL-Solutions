@@ -47,9 +47,8 @@ ORDER BY
 ### 🧾 Results
 
 <div align="center">
-  <img width="692" height="342" alt="image" src="https://github.com/user-attachments/assets/6a7dd703-dd38-4cd1-b013-ad79cee3723c" />
+  <img width="986" height="352" alt="image" src="https://github.com/user-attachments/assets/ec0b2428-e2d2-40fe-a504-d979beca6c78" />
 </div>
-
 
 ## 🔎 Key Findings
 Based on the query results:
