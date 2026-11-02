@@ -390,6 +390,7 @@ ORDER BY sort_order;
 - **Dormancy Data Scarcity**: Intervals exceeding 31 days contain very few records in this dataset, indicating that inactive users either quickly convert to full churn or are systematically purged from active tracking tables.
 
 ## 4. Purchasing Behavior & Incentives
+This section examines how customer shopping preferences, login devices, payment methods, order categories, logistics distances, and incentive programs (cashbacks and coupons) relate to customer attrition.
 
 ### 4.1 Churn Rate by Preferred Login Device
 
@@ -418,6 +419,8 @@ ORDER BY churn_rate_pct DESC;
 | Phone                  | 3996            | 624               | 15.62          |
 
 **Key Takeaway:** 
+- **Desktop vs. Mobile Divergence**: Customers whose preferred login device is a Computer exhibit a noticeably higher churn rate (19.83%) compared to mobile Phone users (15.62%).
+- **Strategic Implication**: While mobile app users account for the vast majority of total volume (3,996 customers), computer-based users may experience different platform constraints, desktop UI friction, or a higher intent to cross-shop competitors.
 
 ### 4.2 Churn Rate by Preferred Payment Mode
 
@@ -450,6 +453,8 @@ ORDER BY churn_rate_pct DESC;
 | Credit Card            | 1501            | 193               | 12.86          |
 
 **Key Takeaway:** 
+- **Friction in Alternative Payments**: High-friction or cash-reliant methods show the highest attrition. Cash on Delivery (COD) leads with a 24.90% churn rate, closely followed by E-Wallets (22.80%) and shorthand CC entries (21.61%).
+- **Stable Digital Channels**: Traditional structured cards provide the strongest stickiness; Credit Card users experience the lowest churn rate at 12.86%, suggesting that established, recurring payment configurations anchor long-term customer loyalty.
 
 ### 4.3 Churn Rate by Preferred Order Category
 
@@ -481,6 +486,8 @@ ORDER BY churn_rate_pct DESC;
 | Grocery                  | 410             | 20                | 4.88           |
 
 **Key Takeaway:** 
+- **High Attrition in Mobile Electronics**: The Mobile order category suffers from a disproportionately high churn rate of 27.40%, representing a massive product-specific leakage vector.
+- **Consumable Loyalty**: Conversely, daily necessity categories like Grocery display exceptional retention, with a minimal churn rate of just 4.88%. High-frequency purchasing categories successfully anchor users, whereas standalone mobile device purchases skew toward one-and-done transactions.
 
 ### 4.4 Churn Rate by Warehouse-to-Home Distance
 
@@ -535,6 +542,8 @@ ORDER BY sort_order;
 | 31+ units      | 471             | 98                | 20.81          |
 
 **Key Takeaway:** 
+- **Logistical Friction**: Distance directly impacts retention. As the warehouse-to-home distance increases, churn rates climb steadily from 13.51% (6–10 units) up to 20.81% (31+ units).
+- **Fulfillment Impact**: Greater geographical distance likely introduces delivery delays, higher shipping friction, or logistics costs that gradually erode customer satisfaction over time.
 
 ### 4.5 Average Coupon Usage by Churn Status
 
@@ -557,6 +566,8 @@ ORDER BY churn_label;
 | Retained        | 4682           | 1.72             |
 
 **Key Takeaway:** 
+- **Incentive Utilization Parity**: Promotional coupon usage is identical across groups, with churned users averaging 1.71 coupons used and retained users averaging 1.72.
+- **Strategic Insight**: Basic coupon availability or redemption volume does not act as a differentiator for retention, implying that blanket discounts alone cannot prevent customer attrition.
 
 ### 4.6 Churn Rate by Cashback Range
 
@@ -608,6 +619,8 @@ ORDER BY sort_order;
 | 300+           | 162             | 10                | 6.17           |
 
 **Key Takeaway:** 
+- **Strong Retention Impact of Rewards**: Unlike coupon frequency, higher monetary cashback value heavily discourages churn. Churn drops sharply from 18.90% for low cashbacks (100–199) down to just 6.17% for high-tier cashback earners (300+).
+- **Value Retention**: Substantial financial reward structures successfully cultivate long-term customer stickiness.
 
 ### 4.7 Order Amount Increase by Churn Status
 
@@ -634,5 +647,130 @@ ORDER BY churn_label;
 | Retained        | 4682           | 15.69                 |
 
 **Key Takeaway:** 
+- **Spending Growth Parity**: Year-over-year order amount hikes are virtually identical between churned (15.62%) and retained (15.69%) groups.
+- **Value Independence**: Expansion in transaction value does not protect against churn; customers leaving the platform grow their spending at the exact same historical rate as those who stay, indicating that churn is driven by service, logistics, or lifecycle friction rather than financial stagnation.
 
+## 5. Advanced Segmentation & Risk Analysis
+This section moves beyond single-variable analysis by examining the intersection of multiple risk factors—specifically tenure length, complaint status, and city tier—to pinpoint exact high-risk customer segments.
+
+### 5.1 Identify High-Risk Multi-Dimensional Customer Segments
+
+> **Business Question:** Which multi-dimensional intersections of customer tenure, complaint status, and city tier identify the highest-risk customer segments?
+
+```sql
+SELECT
+    CASE
+        WHEN tenure <= 6 THEN 'New Customer'
+        WHEN tenure <= 12 THEN 'Developing Customer'
+        WHEN tenure > 12 THEN 'Established Customer'
+        ELSE 'Unknown'
+    END AS tenure_segment,
+    complain_label,
+    city_tier,
+    COUNT(*) AS total_customers,
+    COUNT(*) FILTER (WHERE churn_label = 'Churned') AS churned_customers,
+
+    ROUND(
+        100.0 * COUNT(*) FILTER (WHERE churn_label = 'Churned')
+        / NULLIF(COUNT(*) FILTER (WHERE churn_label IN ('Churned', 'Retained')), 0),
+        2
+    ) AS churn_rate_pct
+
+FROM ecommerce_churn
+GROUP BY tenure_segment, complain_label, city_tier
+HAVING COUNT(*) >= 20
+ORDER BY churn_rate_pct DESC, total_customers DESC;
+```
+
+| tenure_segment       | complain_label | city_tier | total_customers | churned_customers | churn_rate_pct |
+| -------------------- | -------------- | --------- | --------------- | ----------------- | -------------- |
+| New Customer         | Complaint      | 3         | 228             | 138               | 60.53          |
+| New Customer         | Complaint      | 1         | 413             | 221               | 53.51          |
+| New Customer         | No Complaint   | 2         | 52              | 20                | 38.46          |
+| New Customer         | No Complaint   | 3         | 515             | 128               | 24.85          |
+| Developing Customer  | Complaint      | 3         | 126             | 26                | 20.63          |
+| Established Customer | Complaint      | 3         | 144             | 28                | 19.44          |
+| Developing Customer  | Complaint      | 1         | 264             | 51                | 19.32          |
+| New Customer         | No Complaint   | 1         | 924             | 174               | 18.83          |
+| Developing Customer  | No Complaint   | 2         | 66              | 8                 | 12.12          |
+| Developing Customer  | No Complaint   | 3         | 336             | 34                | 10.12          |
+| Established Customer | Complaint      | 1         | 367             | 24                | 6.54           |
+| Developing Customer  | No Complaint   | 1         | 776             | 33                | 4.25           |
+| Established Customer | No Complaint   | 3         | 373             | 14                | 3.75           |
+| Established Customer | No Complaint   | 1         | 922             | 29                | 3.15           |
+| Established Customer | No Complaint   | 2         | 62              | 0                 | 0.00           |
+| Established Customer | Complaint      | 2         | 28              | 0                 | 0.00           |
+
+**Key Takeaway:** 
+- **Compound Vulnerability in Onboarding**: When early tenure aligns with service friction, attrition reaches critical proportions. New customers (0–6 months) who file a complaint in Tier 3 or Tier 1 cities suffer extreme churn rates of 60.53% and 53.51%, respectively.
+- **Protective Effect of Tenure**: Conversely, Established customers (>12 months tenure) with no complaints exhibit near-zero churn (dropping as low as 3.15% in Tier 1 and 0.00% in Tier 2), proving that long-term loyalty effectively insulates users against regional or logistical friction.
+
+### 5.2 Multi-Dimensional Summary Overview
+
+> **Purpose:** Generates a consolidated comparative view across major analytical dimensions for quick portfolio reference and BI integration.
+
+```sql
+SELECT
+    'City Tier' AS analysis_dimension,
+    city_tier::TEXT AS segment,
+    COUNT(*) AS total_customers,
+    COUNT(*) FILTER (WHERE churn_label = 'Churned') AS churned_customers,
+    ROUND(
+        100.0 * COUNT(*) FILTER (WHERE churn_label = 'Churned')
+        / NULLIF(COUNT(*) FILTER (WHERE churn_label IN ('Churned', 'Retained')), 0),
+        2
+    ) AS churn_rate_pct
+FROM ecommerce_churn
+GROUP BY city_tier
+
+UNION ALL
+
+SELECT
+    'Marital Status',
+    marital_status,
+    COUNT(*),
+    COUNT(*) FILTER (WHERE churn_label = 'Churned'),
+    ROUND(
+        100.0 * COUNT(*) FILTER (WHERE churn_label = 'Churned')
+        / NULLIF(COUNT(*) FILTER (WHERE churn_label IN ('Churned', 'Retained')), 0),
+        2
+    )
+FROM ecommerce_churn
+GROUP BY marital_status
+
+UNION ALL
+
+SELECT
+    'Payment Mode',
+    preferred_payment_mode,
+    COUNT(*),
+    COUNT(*) FILTER (WHERE churn_label = 'Churned'),
+    ROUND(
+        100.0 * COUNT(*) FILTER (WHERE churn_label = 'Churned')
+        / NULLIF(COUNT(*) FILTER (WHERE churn_label IN ('Churned', 'Retained')), 0),
+        2
+    )
+FROM ecommerce_churn
+GROUP BY preferred_payment_mode
+
+ORDER BY analysis_dimension, churn_rate_pct DESC;
+```
+
+| analysis_dimension | segment          | total_customers | churned_customers | churn_rate_pct |
+| ------------------ | ---------------- | --------------- | ----------------- | -------------- |
+| City Tier          | 3                | 1722            | 368               | 21.37          |
+| City Tier          | 2                | 242             | 48                | 19.83          |
+| City Tier          | 1                | 3666            | 532               | 14.51          |
+| Marital Status     | Single           | 1796            | 480               | 26.73          |
+| Marital Status     | Divorced         | 848             | 124               | 14.62          |
+| Marital Status     | Married          | 2986            | 344               | 11.52          |
+| Payment Mode       | Cash on Delivery | 514             | 128               | 24.90          |
+| Payment Mode       | E-Wallet         | 614             | 140               | 22.80          |
+| Payment Mode       | CC               | 273             | 59                | 21.61          |
+| Payment Mode       | UPI              | 414             | 72                | 17.39          |
+| Payment Mode       | Debit Card       | 2314            | 356               | 15.38          |
+| Payment Mode       | Credit Card      | 1501            | 193               | 12.86          |
+
+**Key Takeaway:**
+- This cross-dimensional summary unifies the primary structural risk factors across the platform: City Tier 3 locations (21.37% churn), Single life-stage status (26.73% churn), and alternative transaction methods like Cash on Delivery (24.90% churn) emerge as the highest-risk macro segments requiring targeted retention frameworks.
 
