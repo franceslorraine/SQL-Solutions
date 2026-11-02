@@ -388,3 +388,251 @@ ORDER BY sort_order;
 **Key Takeaway:** 
 - **Immediate Re-engagement Window**: The vast majority of customer activity concentrates within the 0–7 day window. Customers ordering within the last week display a 19.06% churn rate, reflecting high-frequency users who may also churn rapidly if expectations aren't met.
 - **Dormancy Data Scarcity**: Intervals exceeding 31 days contain very few records in this dataset, indicating that inactive users either quickly convert to full churn or are systematically purged from active tracking tables.
+
+## 4. Purchasing Behavior & Incentives
+
+### 4.1 Churn Rate by Preferred Login Device
+
+> **Business Question:** Which preferred login devices are associated with higher churn rates?
+
+```sql
+SELECT
+    preferred_login_device,
+    COUNT(*) AS total_customers,
+    COUNT(*) FILTER (WHERE churn_label = 'Churned') AS churned_customers,
+
+    ROUND(
+        100.0 * COUNT(*) FILTER (WHERE churn_label = 'Churned')
+        / NULLIF(COUNT(*) FILTER (WHERE churn_label IN ('Churned', 'Retained')), 0),
+        2
+    ) AS churn_rate_pct
+
+FROM ecommerce_churn
+GROUP BY preferred_login_device
+ORDER BY churn_rate_pct DESC;
+```
+
+| preferred_login_device | total_customers | churned_customers | churn_rate_pct |
+| ---------------------- | --------------- | ----------------- | -------------- |
+| Computer               | 1634            | 324               | 19.83          |
+| Phone                  | 3996            | 624               | 15.62          |
+
+**Key Takeaway:** 
+
+### 4.2 Churn Rate by Preferred Payment Mode
+
+> **Business Question:** Which preferred payment modes have the highest observed churn rates?
+
+```sql
+SELECT
+    preferred_payment_mode,
+    COUNT(*) AS total_customers,
+    COUNT(*) FILTER (WHERE churn_label = 'Churned') AS churned_customers,
+
+    ROUND(
+        100.0 * COUNT(*) FILTER (WHERE churn_label = 'Churned')
+        / NULLIF(COUNT(*) FILTER (WHERE churn_label IN ('Churned', 'Retained')), 0),
+        2
+    ) AS churn_rate_pct
+
+FROM ecommerce_churn
+GROUP BY preferred_payment_mode
+ORDER BY churn_rate_pct DESC;
+```
+
+| preferred_payment_mode | total_customers | churned_customers | churn_rate_pct |
+| ---------------------- | --------------- | ----------------- | -------------- |
+| Cash on Delivery       | 514             | 128               | 24.90          |
+| E-Wallet               | 614             | 140               | 22.80          |
+| CC                     | 273             | 59                | 21.61          |
+| UPI                    | 414             | 72                | 17.39          |
+| Debit Card             | 2314            | 356               | 15.38          |
+| Credit Card            | 1501            | 193               | 12.86          |
+
+**Key Takeaway:** 
+
+### 4.3 Churn Rate by Preferred Order Category
+
+> **Business Question:** Which preferred order categories have higher churn rates?
+
+```sql
+SELECT
+    prefered_order_cat AS preferred_order_category,
+    COUNT(*) AS total_customers,
+    COUNT(*) FILTER (WHERE churn_label = 'Churned') AS churned_customers,
+
+    ROUND(
+        100.0 * COUNT(*) FILTER (WHERE churn_label = 'Churned')
+        / NULLIF(COUNT(*) FILTER (WHERE churn_label IN ('Churned', 'Retained')), 0),
+        2
+    ) AS churn_rate_pct
+
+FROM ecommerce_churn
+GROUP BY prefered_order_cat
+ORDER BY churn_rate_pct DESC;
+```
+
+| preferred_order_category | total_customers | churned_customers | churn_rate_pct |
+| ------------------------ | --------------- | ----------------- | -------------- |
+| Mobile                   | 2080            | 570               | 27.40          |
+| Fashion                  | 826             | 128               | 15.50          |
+| Laptop & Accessory       | 2050            | 210               | 10.24          |
+| Others                   | 264             | 20                | 7.58           |
+| Grocery                  | 410             | 20                | 4.88           |
+
+**Key Takeaway:** 
+
+### 4.4 Churn Rate by Warehouse-to-Home Distance
+
+> **Business Question:** Does churn vary with the distance between customers and warehouses?
+
+```sql
+WITH distance_segments AS (
+    SELECT
+        CASE
+            WHEN warehouse_to_home IS NULL THEN 'Unknown'
+            WHEN warehouse_to_home <= 5 THEN '0–5 units'
+            WHEN warehouse_to_home <= 10 THEN '6–10 units'
+            WHEN warehouse_to_home <= 20 THEN '11–20 units'
+            WHEN warehouse_to_home <= 30 THEN '21–30 units'
+            ELSE '31+ units'
+        END AS distance_group,
+
+        CASE
+            WHEN warehouse_to_home IS NULL THEN 6
+            WHEN warehouse_to_home <= 5 THEN 1
+            WHEN warehouse_to_home <= 10 THEN 2
+            WHEN warehouse_to_home <= 20 THEN 3
+            WHEN warehouse_to_home <= 30 THEN 4
+            ELSE 5
+        END AS sort_order,
+
+        churn_label
+    FROM ecommerce_churn
+)
+SELECT
+    distance_group,
+    COUNT(*) AS total_customers,
+    COUNT(*) FILTER (WHERE churn_label = 'Churned') AS churned_customers,
+
+    ROUND(
+        100.0 * COUNT(*) FILTER (WHERE churn_label = 'Churned')
+        / NULLIF(COUNT(*) FILTER (WHERE churn_label IN ('Churned', 'Retained')), 0),
+        2
+    ) AS churn_rate_pct
+
+FROM distance_segments
+GROUP BY distance_group, sort_order
+ORDER BY sort_order;
+```
+
+| distance_group | total_customers | churned_customers | churn_rate_pct |
+| -------------- | --------------- | ----------------- | -------------- |
+| 0–5 units      | 8               | 1                 | 12.50          |
+| 6–10 units     | 1961            | 265               | 13.51          |
+| 11–20 units    | 2318            | 408               | 17.60          |
+| 21–30 units    | 872             | 176               | 20.18          |
+| 31+ units      | 471             | 98                | 20.81          |
+
+**Key Takeaway:** 
+
+### 4.5 Average Coupon Usage by Churn Status
+
+> **Business Question:** Do churned and retained customers differ in average coupon usage?
+
+```sql
+SELECT
+    churn_label AS customer_status,
+    COUNT(*) AS customer_count,
+    ROUND(AVG(coupon_used)::NUMERIC, 2) AS avg_coupons_used
+
+FROM ecommerce_churn
+GROUP BY churn_label
+ORDER BY churn_label;
+```
+
+| customer_status | customer_count | avg_coupons_used |
+| --------------- | -------------- | ---------------- |
+| Churned         | 948            | 1.71             |
+| Retained        | 4682           | 1.72             |
+
+**Key Takeaway:** 
+
+### 4.6 Churn Rate by Cashback Range
+
+> **Business Question:** Does churn vary across cashback amount ranges?
+
+```sql
+WITH cashback_segments AS (
+    SELECT
+        CASE
+            WHEN cashback_amount IS NULL THEN 'Unknown'
+            WHEN cashback_amount < 100 THEN 'Below 100'
+            WHEN cashback_amount < 200 THEN '100–199'
+            WHEN cashback_amount < 300 THEN '200–299'
+            ELSE '300+'
+        END AS cashback_group,
+
+        CASE
+            WHEN cashback_amount IS NULL THEN 5
+            WHEN cashback_amount < 100 THEN 1
+            WHEN cashback_amount < 200 THEN 2
+            WHEN cashback_amount < 300 THEN 3
+            ELSE 4
+        END AS sort_order,
+
+        churn_label
+    FROM ecommerce_churn
+)
+SELECT
+    cashback_group,
+    COUNT(*) AS total_customers,
+    COUNT(*) FILTER (WHERE churn_label = 'Churned') AS churned_customers,
+
+    ROUND(
+        100.0 * COUNT(*) FILTER (WHERE churn_label = 'Churned')
+        / NULLIF(COUNT(*) FILTER (WHERE churn_label IN ('Churned', 'Retained')), 0),
+        2
+    ) AS churn_rate_pct
+
+FROM cashback_segments
+GROUP BY cashback_group, sort_order
+ORDER BY sort_order;
+```
+
+| cashback_group | total_customers | churned_customers | churn_rate_pct |
+| -------------- | --------------- | ----------------- | -------------- |
+| Below 100      | 12              | 0                 | 0.00           |
+| 100–199        | 4275            | 808               | 18.90          |
+| 200–299        | 1181            | 130               | 11.01          |
+| 300+           | 162             | 10                | 6.17           |
+
+**Key Takeaway:** 
+
+### 4.7 Order Amount Increase by Churn Status
+
+> **Business Question:** Does the reported increase in order amount from last year differ between churned and retained customers?
+
+```sql
+SELECT
+    churn_label AS customer_status,
+    COUNT(*) AS customer_count,
+
+    ROUND(
+        AVG(order_amount_hike_from_last_year)::NUMERIC,
+        2
+    ) AS avg_order_amount_hike
+
+FROM ecommerce_churn
+GROUP BY churn_label
+ORDER BY churn_label;
+```
+
+| customer_status | customer_count | avg_order_amount_hike |
+| --------------- | -------------- | --------------------- |
+| Churned         | 948            | 15.62                 |
+| Retained        | 4682           | 15.69                 |
+
+**Key Takeaway:** 
+
+
